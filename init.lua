@@ -40,7 +40,9 @@ userbase.escape_v = function(value, key)
         "Conversion from table to string will happen automatically!")
     assert(type(value.password) == "string")
     assert(type(value.privileges) == "table")
-    assert(type(value.last_login) == "number")
+    if type(value.last_login) ~= "number" then
+        value.last_login = ""
+    end
     local name = key
     local privstring = minetest.privs_to_string(value.privileges)
     value = name..":"..value.password..":"..privstring..":"..value.last_login..'\n'
