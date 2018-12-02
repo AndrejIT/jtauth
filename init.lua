@@ -99,7 +99,7 @@ minetest.register_authentication_handler({
 	create_auth = function(name, password)
 		assert(type(name) == "string")
 		assert(type(password) == "string")
-		minetest.log('info', "Built-in authentication handler adding player '"..name.."'")
+		minetest.log("info", "JT authentication handler adding player '"..name.."'")
 		local user_record = {
 			password = password,
 			privileges = minetest.string_to_privs(minetest.setting_get("default_privs")),
@@ -122,10 +122,11 @@ minetest.register_authentication_handler({
 			minetest.get_auth_handler().create_auth(name, password)
 		else
             local user_record = userbase:read(name)
-			minetest.log('info', "Built-in authentication handler setting password of player '"..name.."'")
+			minetest.log("action", "JT authentication handler setting password of player '"..name.."'")
 			user_record.password = password
 			userbase:write(name, user_record)
 		end
+        return true
 	end,
 	set_privileges = function(name, privileges)
 		assert(type(name) == "string")
@@ -136,6 +137,7 @@ minetest.register_authentication_handler({
         local user_record = userbase:read(name)
 		user_record.privileges = privileges
         userbase:write(name, user_record)
+        minetest.log("action", "JT authentication handler setting privs of player '"..name.."'")
 		minetest.notify_authentication_modified(name)
 	end,
     reload = function()
