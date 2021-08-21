@@ -1,5 +1,8 @@
 --
 
+jtauth = {}
+jtauth.fallback_last_login = -1 -- 1420070399
+
 local userbase = jtdb:new(minetest.get_worldpath() .. "/auth")
 
 -- if auth.txt present, import all records fron there and merge with existing data
@@ -55,7 +58,14 @@ userbase.unescape_v = function(value, key)
 		error("Invalid line or corrypted auth.jtdb! "..dump(value))
 	end
     local privileges = minetest.string_to_privs(privilegestring)
-    value = {password=password, privileges=privileges, last_login=tonumber(last_login)}
+    local last_login_int = tonumber(last_login)
+    -- 5.4.1 gives
+    -- ERROR[Main]: ServerError: AsyncErr: ServerThread::run Lua: Authentication handler didn't return last_login
+    if not last_login_int or last_login_int == 0 or last_login_int == nil then
+        minetest.log("error", "JTAUTH last_login null "..name.." "..value)
+        last_login_int = jtauth.fallback_last_login
+    end
+    value = {password=password, privileges=privileges, last_login=last_login_int}
     return value
 end
 
@@ -86,7 +96,7 @@ minetest.register_authentication_handler({
 				end
 			end
 		-- For the admin, give everything
-		elseif name == minetest.setting_get("name") then
+    elseif name == minetest.settings:get("name") then
 			for priv, def in pairs(minetest.registered_privileges) do
 				privileges[priv] = true
 			end
@@ -104,7 +114,7 @@ minetest.register_authentication_handler({
 		minetest.log("info", "JT authentication handler adding player '"..name.."'")
 		local user_record = {
 			password = password,
-			privileges = minetest.string_to_privs(minetest.setting_get("default_privs")),
+			privileges = minetest.string_to_privs(minetest.settings:get("default_privs")),
             last_login = os.time(),
 		}
         userbase:write(name, user_record)
@@ -134,7 +144,7 @@ minetest.register_authentication_handler({
 		assert(type(name) == "string")
 		assert(type(privileges) == "table")
 		if userbase.id[name] == nil then
-			minetest.get_auth_handler().create_auth(name, minetest.get_password_hash(name, minetest.setting_get("default_password")))
+			minetest.get_auth_handler().create_auth(name, minetest.get_password_hash(name, minetest.settings:get("default_password")))
 		end
         local user_record = userbase:read(name)
 		user_record.privileges = privileges
